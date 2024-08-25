@@ -2,12 +2,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
+from langchain.chains.retrieval import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
 
 
 llm = ChatOpenAI(model="gpt-4o")
@@ -39,17 +39,15 @@ prompt = ChatPromptTemplate.from_messages([
     ("human", "{input}"),
 ])
 
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
+qa_chain = create_stuff_documents_chain(llm, prompt)
+rag_chain = create_retrieval_chain(retriever, qa_chain)
 
-rag_chain = (
-    {"context": retriever | format_docs, "input": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
-)
+question = input("Please enter your question: ")
+if not question:
+    with open("example-question.txt", "r") as f:
+        question = f.readline().strip('\n')
 
-# the reason we pass string directly to the chain is because this chain expect a string input
-# the dict of "context" and "input" is converted to RunnableParallel.
-# RunnableParallel returns a dict of "context" and "input" which is then passed to the prompt
-print(rag_chain.invoke("ช่วยบอกเกี่ยวกับบริษัท CJ More หน่อยครับ"))
+ret = rag_chain.invoke({"input": question})
+
+print(f'Context is: {ret["context"]}')
+print(f'Answer is: {ret["answer"]}')
