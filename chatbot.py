@@ -86,16 +86,18 @@ class Chatbot:
         return self.store[session_id]
 
     def chat(self, question, session_id="123"):
-        return self.conversational_rag_chain.invoke(
+        return self.conversational_rag_chain.stream(
             {"input": question},
             config={"configurable": {"session_id": session_id}}
         )
 
-# Usage example:
-# chatbot = Chatbot("example-document.txt")
-# question = input("Please enter your question: ")
-# if not question:
-#     with open("example-question.txt", "r") as f:
-#         question = f.readline().strip('\n')
-# response = chatbot.chat(question)
-# print(response)
+if __name__ == '__main__':
+    # Usage example:
+    chatbot = Chatbot("example-document.txt")
+    question = input("Please enter your question: ")
+    if not question:
+        with open("example-question.txt", "r") as f:
+            question = f.readline().strip('\n')
+
+    for val in map(lambda ret: ret['answer'], filter(lambda ret: 'answer' in ret, chatbot.chat(question))):
+        print(val)
