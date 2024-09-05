@@ -15,7 +15,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 class Chatbot:
     def __init__(self, document_path):
         load_dotenv()
-        self.llm = ChatOpenAI(model="gpt-4o")
+        self.llm = ChatOpenAI(base_url='http://localhost:8000')
         self.document_path = document_path
         self.store = {}
         self.setup_retriever()
