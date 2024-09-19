@@ -1,22 +1,31 @@
-from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_community.document_loaders import TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
-from langchain.chains.retrieval import create_retrieval_chain
-from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.history_aware_retriever import create_history_aware_retriever
+from langchain.chains.retrieval import create_retrieval_chain
+from langchain_chroma import Chroma
 from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_community.document_loaders import TextLoader
 from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+from config import Config
 
 
 class Chatbot:
-    def __init__(self, document_path):
-        load_dotenv()
-        self.llm = ChatOpenAI(base_url='http://localhost:8000')
-        self.document_path = document_path
+    ''' This class can't be serialized because one of langchain objects can't be serialized '''
+    def __init__(self, config: Config):
+        self.config = config
+
+        chat_kwargs = {
+            'openai_api_key': config.openai_api_key,
+        }
+        if config.openai_base_url:
+            chat_kwargs['base_url'] = config.openai_base_url
+        self.llm = ChatOpenAI(**chat_kwargs)
+
+        self.document_path = config.document_path
         self.store = {}
         self.setup_retriever()
         self.setup_chain()
@@ -26,11 +35,19 @@ class Chatbot:
         docs = text_loader.load()
 
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
+            chunk_size=512,
             chunk_overlap=200,
         )
         splitted_docs = text_splitter.split_documents(docs)
-        vectorstore = Chroma.from_documents(documents=splitted_docs, embedding=OpenAIEmbeddings())
+
+        embedding_kwargs = {
+            'openai_api_key': self.config.openai_api_key,
+        }
+        if self.config.openai_base_url:
+            embedding_kwargs['base_url'] = self.config.openai_base_url
+        # embedding need to be from llama.cpp server at /embedding too
+        vectorstore = Chroma.from_documents(documents=splitted_docs,
+                                            embedding=OpenAIEmbeddings(**embedding_kwargs))
         self.retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 3})
 
     def setup_chain(self):
@@ -90,14 +107,3 @@ class Chatbot:
             {"input": question},
             config={"configurable": {"session_id": session_id}}
         )
-
-if __name__ == '__main__':
-    # Usage example:
-    chatbot = Chatbot("example-document.txt")
-    question = input("Please enter your question: ")
-    if not question:
-        with open("example-question.txt", "r") as f:
-            question = f.readline().strip('\n')
-
-    for val in map(lambda ret: ret['answer'], filter(lambda ret: 'answer' in ret, chatbot.chat(question))):
-        print(val)
