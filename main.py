@@ -1,8 +1,19 @@
+import sys
+
 import streamlit as st
+
+from config import Config
 from chatbot import Chatbot
 
 
-chatbot = Chatbot("example-document.txt")
+@st.cache_resource
+def get_chatbot():
+    if len(sys.argv) < 2:
+        raise ValueError('Please provide a config file path as an positional argument')
+    return Chatbot(Config(sys.argv[1]))
+
+
+chatbot = get_chatbot()
 
 st.title("Customer support")
 
