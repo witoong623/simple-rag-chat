@@ -1,3 +1,4 @@
 openai_compatible_base_url: http://localhost:8000
 openai_api_key: no-key
+# path inside container
 document_path: example-document.txt
