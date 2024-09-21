@@ -23,3 +23,13 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    healthcheck:
+      test: curl --fail http://localhost:8000/health || exit 1
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+  app:
+    depends_on:
+      llama-cpp-server:
+        condition: service_healthy
