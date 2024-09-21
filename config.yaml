@@ -1,4 +1,4 @@
-openai_compatible_base_url: http://localhost:8000
+openai_compatible_base_url: http://llama-cpp-server:8000
 openai_api_key: no-key
 # path inside container
-document_path: example-document.txt
+document_path: /app/example-document.txt
