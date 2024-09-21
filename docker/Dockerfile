@@ -10,4 +10,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app
 
-CMD ["streamlit", "run", "main.py", "/app/config/config.yml"]
+CMD ["streamlit", "run", "main.py", "/app/config/config.yaml"]

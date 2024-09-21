@@ -9,4 +9,4 @@ services:
     ports:
       - "8501:8501"
     volumes:
-      - ./config.yaml:/app/config/config.yaml
+      - ${PWD}/config.yaml:/app/config/config.yaml
